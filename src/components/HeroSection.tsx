@@ -1,52 +1,37 @@
-import React, { useRef } from 'react';
-import { MapPin, Building2, BookOpen, Quote, Award, Camera, Trash2, GraduationCap, Sparkles } from 'lucide-react';
+import React from 'react';
+import {
+  Building2,
+  MapPin,
+  GraduationCap,
+  Quote,
+  BookOpen,
+} from 'lucide-react';
 import { ResearcherProfile } from '../types/researcher';
 import { ScholarLinksBar } from './AcademicBadges';
 
 interface HeroSectionProps {
   profile: ResearcherProfile;
   onExplorePublications: () => void;
-  onViewCV?: () => void;
-  onUpdateAvatar: (avatarUrl: string) => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   profile,
   onExplorePublications,
-  onUpdateAvatar,
 }) => {
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-
-  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      if (base64) {
-        onUpdateAvatar(base64);
-      }
-    };
-    reader.readAsDataURL(file);
-
-    if (avatarInputRef.current) {
-      avatarInputRef.current.value = '';
-    }
-  };
-
   return (
-    <section id="about" className="py-12 sm:py-16 md:py-20 border-b border-slate-200/80">
+    <section id="about" className="pt-12 pb-16 sm:pt-16 sm:pb-20 border-b border-slate-200/80 bg-slate-50/40">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
-          {/* Main Editorial Bio & Affiliation (8 Cols) */}
+          {/* Main Scholarly Dossier & Narrative (8 Cols) */}
           <div className="lg:col-span-8 space-y-6">
             
-            {/* Title & Affiliation Header for Research Scholar */}
+            {/* Academic Status Eyebrow & Wordmark */}
             <div>
-              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-2">
-                <span className="font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+              <div className="inline-flex items-center gap-2 text-xs font-mono font-medium text-amber-900 bg-amber-50 px-2.5 py-1 rounded border border-amber-200/60 mb-3">
+                <span className="w-2 h-2 rounded-full bg-amber-600"></span>
+                <span>
                   {profile.title}
                 </span>
                 <span aria-hidden="true">·</span>
@@ -113,7 +98,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
             </div>
 
-            {/* Narrative Bio (Paragraph 1) */}
+            {/* Narrative Bio (Single Paragraph) */}
             <div className="space-y-3.5 text-slate-700 leading-relaxed text-sm sm:text-base">
               {profile.bio.length > 0 && <p>{profile.bio[0]}</p>}
             </div>
@@ -151,18 +136,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="lg:col-span-4">
             <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-xs space-y-6">
               
-              {/* Hidden file input for avatar photo upload */}
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarFileChange}
-                className="hidden"
-              />
-
-              {/* Scholar Portrait / Monogram with direct upload option */}
+              {/* Scholar Portrait / Monogram */}
               <div className="flex flex-col items-center text-center">
-                <div className="relative group mb-3">
+                <div className="mb-3">
                   {profile.avatarUrl ? (
                     <img
                       src={profile.avatarUrl}
@@ -175,40 +151,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       <span className="text-2xl font-bold tracking-tight">KV</span>
                       <span className="text-[10px] tracking-widest uppercase text-amber-200 font-sans mt-0.5">Scholar</span>
                     </div>
-                  )}
-
-                  {/* Hover upload trigger overlay */}
-                  <button
-                    type="button"
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="absolute inset-0 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[10px] font-medium"
-                    title="Upload profile picture from device"
-                  >
-                    <Camera className="w-5 h-5 mb-0.5" />
-                    <span>Upload Photo</span>
-                  </button>
-                </div>
-
-                {/* Direct photo controls */}
-                <div className="flex items-center gap-2 mb-2">
-                  <button
-                    type="button"
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-slate-900 px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50 transition-colors"
-                  >
-                    <Camera className="w-3 h-3 text-slate-500" />
-                    <span>{profile.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
-                  </button>
-                  {profile.avatarUrl && (
-                    <button
-                      type="button"
-                      onClick={() => onUpdateAvatar('')}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-rose-600 hover:text-rose-800 px-1.5 py-0.5 rounded hover:bg-rose-50 transition-colors"
-                      title="Remove profile picture"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span>Remove</span>
-                    </button>
                   )}
                 </div>
                 
@@ -265,26 +207,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                       {profile.publications.length}
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Research Scholar Milestones / Highlights Summary */}
-              <div className="border-t border-slate-100 pt-4 space-y-2 text-xs text-slate-600">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-                  <span>ICML 2026 &amp; NeurIPS 2025 Oral Author</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                  <span>ACM SIGKDD Student Travel Awardee</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                  <span>Visiting Fellow @ Max Planck Institute (MPI MiS)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                  <span>Graduate Teaching Assistant (CS 8420)</span>
                 </div>
               </div>
 

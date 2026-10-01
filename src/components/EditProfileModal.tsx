@@ -256,28 +256,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 </div>
               </div>
 
-              {/* Academic CV Link */}
-              <div>
-                <label htmlFor="editCvUrl" className="flex items-center justify-between font-medium text-slate-800 mb-1">
-                  <span>Academic CV Link (External PDF or On-Page Anchor) *</span>
-                  <span className="text-[10px] text-slate-500 font-normal">Use "#academic-cv" for built-in CV view</span>
-                </label>
-                <input
-                  id="editCvUrl"
-                  type="text"
-                  required
-                  value={formData.links.cvUrl}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      links: { ...formData.links, cvUrl: e.target.value }
-                    })
-                  }
-                  placeholder="#academic-cv or https://example.edu/~kvasan/cv.pdf"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded text-slate-900 font-mono text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
-                />
-              </div>
-
               {/* Email & GitHub */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

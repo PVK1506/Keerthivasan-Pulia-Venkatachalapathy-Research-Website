@@ -102,16 +102,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ profile }) => {
               </div>
             </div>
 
-            {/* Note for prospective students */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 text-xs text-slate-600 space-y-2">
-              <strong className="text-slate-900 block font-medium text-sm">
-                Note for Prospective Students &amp; Postdocs
-              </strong>
-              <p className="leading-relaxed">
-                We are actively looking for highly motivated Ph.D. students and postdoctoral researchers with backgrounds in spectral graph theory, geometric deep learning, and distributed optimization. Please include your CV and a 1-page research summary when emailing.
-              </p>
-            </div>
-
           </div>
 
           {/* Academic Inquiry / Message Form (7 Cols) */}

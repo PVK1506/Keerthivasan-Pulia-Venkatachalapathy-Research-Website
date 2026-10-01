@@ -4,39 +4,76 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ResearcherProfile, Publication, EngagementItem } from './types/researcher';
+import {
+  ResearcherProfile,
+  Publication,
+} from './types/researcher';
 import { INITIAL_RESEARCHER_PROFILE } from './data/initialData';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
+import { AcademicEducationSection } from './components/AcademicEducationSection';
 import { ResearchInterestsSection } from './components/ResearchInterestsSection';
 import { PublicationsSection } from './components/PublicationsSection';
 import { EngagementsSection } from './components/EngagementsSection';
-import { CVSection } from './components/CVSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { BibtexModal } from './components/BibtexModal';
-import { EditProfileModal } from './components/EditProfileModal';
-import { AddPublicationModal } from './components/AddPublicationModal';
-import { AddEngagementModal } from './components/AddEngagementModal';
 import { PhotoLightboxModal } from './components/PhotoLightboxModal';
-import { NewsSection } from './components/NewsSection';
+import { PublishSyncModal } from './components/PublishSyncModal';
 
-const STORAGE_KEY = 'kvasan_research_scholar_profile_v3';
+const STORAGE_KEYS = [
+  'kvasan_research_scholar_profile_v6',
+  'kvasan_research_scholar_profile_v5',
+  'kvasan_research_scholar_profile_v4',
+  'kvasan_research_scholar_profile_v3',
+  'kvasan_research_scholar_profile_v2',
+  'kvasan_research_scholar_profile',
+];
 
 export default function App() {
+  // Retrieve profile with automatic support for URL data hashes (#data=... or #profile=...) and localStorage
   const [profile, setProfile] = useState<ResearcherProfile>(() => {
+    // 1. Check if URL hash contains a pre-encoded profile transfer payload
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash.startsWith('#data=') || hash.startsWith('#profile=')) {
+        try {
+          const payloadStr = hash.replace(/^#(data|profile)=/, '');
+          const decoded = decodeURIComponent(payloadStr);
+          const parsed = JSON.parse(decoded);
+          if (parsed && typeof parsed === 'object' && parsed.name) {
+            localStorage.setItem('kvasan_research_scholar_profile_v6', JSON.stringify(parsed));
+            // Clean hash from URL bar
+            window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            return { ...INITIAL_RESEARCHER_PROFILE, ...parsed };
+          }
+        } catch (err) {
+          console.error('Failed to parse profile from URL hash:', err);
+        }
+      }
+    }
+
+    // 2. Check localStorage across all known keys
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Ensure engagements and news arrays exist
-        if (!parsed.engagements) {
-          parsed.engagements = INITIAL_RESEARCHER_PROFILE.engagements;
+      for (const key of STORAGE_KEYS) {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') {
+            return {
+              ...INITIAL_RESEARCHER_PROFILE,
+              ...parsed,
+              bio: parsed.bio && parsed.bio.length > 0 ? parsed.bio : INITIAL_RESEARCHER_PROFILE.bio,
+              publications: parsed.publications && parsed.publications.length > 0 ? parsed.publications : INITIAL_RESEARCHER_PROFILE.publications,
+              engagements: parsed.engagements && parsed.engagements.length > 0 ? parsed.engagements : INITIAL_RESEARCHER_PROFILE.engagements,
+              interests: parsed.interests && parsed.interests.length > 0 ? parsed.interests : INITIAL_RESEARCHER_PROFILE.interests,
+              education: parsed.education && parsed.education.length > 0 ? parsed.education : INITIAL_RESEARCHER_PROFILE.education,
+              experience: parsed.experience && parsed.experience.length > 0 ? parsed.experience : INITIAL_RESEARCHER_PROFILE.experience,
+              links: { ...INITIAL_RESEARCHER_PROFILE.links, ...(parsed.links || {}) },
+              metrics: { ...INITIAL_RESEARCHER_PROFILE.metrics, ...(parsed.metrics || {}) },
+            };
+          }
         }
-        if (!parsed.news) {
-          parsed.news = INITIAL_RESEARCHER_PROFILE.news;
-        }
-        return parsed;
       }
     } catch (e) {
       console.error('Failed to load profile from localStorage:', e);
@@ -44,15 +81,11 @@ export default function App() {
     return INITIAL_RESEARCHER_PROFILE;
   });
 
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  // Modal States
   const [selectedBibtexPub, setSelectedBibtexPub] = useState<Publication | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isAddPubModalOpen, setIsAddPubModalOpen] = useState(false);
-  const [editingPublication, setEditingPublication] = useState<Publication | null>(null);
-  const [isAddEngModalOpen, setIsAddEngModalOpen] = useState(false);
-  const [editingEngagement, setEditingEngagement] = useState<EngagementItem | null>(null);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
-  // Lightbox state
+  // Lightbox state for documentation and conference photos
   const [lightboxState, setLightboxState] = useState<{
     isOpen: boolean;
     photos: string[];
@@ -66,125 +99,37 @@ export default function App() {
     title: '',
   });
 
-  // Sync state to localStorage
+  // Check URL hash on subsequent hashchange events
   useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#data=') || hash.startsWith('#profile=')) {
+        try {
+          const payloadStr = hash.replace(/^#(data|profile)=/, '');
+          const decoded = decodeURIComponent(payloadStr);
+          const parsed = JSON.parse(decoded);
+          if (parsed && typeof parsed === 'object' && parsed.name) {
+            setProfile((prev) => ({ ...prev, ...parsed }));
+            localStorage.setItem('kvasan_research_scholar_profile_v6', JSON.stringify(parsed));
+            window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+          }
+        } catch (err) {
+          console.error('Failed to handle hashchange:', err);
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleImportProfile = (imported: ResearcherProfile) => {
+    setProfile(imported);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+      localStorage.setItem('kvasan_research_scholar_profile_v6', JSON.stringify(imported));
     } catch (e) {
-      console.error('Failed to save profile to localStorage:', e);
+      console.error('Failed to save imported profile:', e);
     }
-  }, [profile]);
-
-  // Handlers
-  const handleSaveProfile = (updated: ResearcherProfile) => {
-    setProfile(updated);
-  };
-
-  const handleUpdateAvatar = (avatarUrl: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      avatarUrl,
-    }));
-  };
-
-  const handleResetToDefault = () => {
-    setProfile(INITIAL_RESEARCHER_PROFILE);
-    localStorage.removeItem(STORAGE_KEY);
-    setSelectedTopicId(null);
-  };
-
-  const handleSavePublication = (pub: Publication) => {
-    setProfile((prev) => {
-      const exists = prev.publications.some((p) => p.id === pub.id);
-      let updatedPubs: Publication[];
-      if (exists) {
-        updatedPubs = prev.publications.map((p) => (p.id === pub.id ? pub : p));
-      } else {
-        updatedPubs = [pub, ...prev.publications];
-      }
-      return {
-        ...prev,
-        publications: updatedPubs,
-        metrics: {
-          ...prev.metrics,
-          publicationsCount: updatedPubs.length,
-        },
-      };
-    });
-    setEditingPublication(null);
-  };
-
-  const handleDeletePublication = (pubId: string) => {
-    setProfile((prev) => {
-      const updatedPubs = prev.publications.filter((p) => p.id !== pubId);
-      return {
-        ...prev,
-        publications: updatedPubs,
-        metrics: {
-          ...prev.metrics,
-          publicationsCount: updatedPubs.length,
-        },
-      };
-    });
-    if (editingPublication?.id === pubId) {
-      setEditingPublication(null);
-    }
-  };
-
-  const handleClearAllPublications = () => {
-    setProfile((prev) => ({
-      ...prev,
-      publications: [],
-      metrics: {
-        ...prev.metrics,
-        publicationsCount: 0,
-      },
-    }));
-    setEditingPublication(null);
-  };
-
-  const handleRestoreSamplePublications = () => {
-    setProfile((prev) => ({
-      ...prev,
-      publications: INITIAL_RESEARCHER_PROFILE.publications,
-      metrics: {
-        ...prev.metrics,
-        publicationsCount: INITIAL_RESEARCHER_PROFILE.publications.length,
-      },
-    }));
-  };
-
-  const handleSaveEngagement = (item: EngagementItem) => {
-    setProfile((prev) => {
-      const exists = prev.engagements.some((e) => e.id === item.id);
-      if (exists) {
-        return {
-          ...prev,
-          engagements: prev.engagements.map((e) => (e.id === item.id ? item : e)),
-        };
-      }
-      return {
-        ...prev,
-        engagements: [item, ...prev.engagements],
-      };
-    });
-    setEditingEngagement(null);
-  };
-
-  const handleUpdateEngagementPhotos = (engagementId: string, newPhotos: string[]) => {
-    setProfile((prev) => ({
-      ...prev,
-      engagements: prev.engagements.map((e) =>
-        e.id === engagementId ? { ...e, photos: newPhotos } : e
-      ),
-    }));
-  };
-
-  const handleDeleteEngagement = (engagementId: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      engagements: prev.engagements.filter((e) => e.id !== engagementId),
-    }));
   };
 
   const handleOpenPhotoLightbox = (
@@ -202,14 +147,6 @@ export default function App() {
     });
   };
 
-  const handleSelectTopicFromInterests = (topicId: string) => {
-    setSelectedTopicId(topicId);
-    const pubSection = document.getElementById('publications');
-    if (pubSection) {
-      pubSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const handleScrollToPublications = () => {
     const pubSection = document.getElementById('publications');
     if (pubSection) {
@@ -217,142 +154,56 @@ export default function App() {
     }
   };
 
-  const handleScrollToCV = () => {
-    if (profile.links.cvUrl.startsWith('http')) {
-      window.open(profile.links.cvUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    const cvSection = document.getElementById('academic-cv');
-    if (cvSection) {
-      cvSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-[#FBFBFA] text-slate-800 selection:bg-amber-100 selection:text-amber-900">
       
-      {/* 3-Zone Top Bar Navigation Contract */}
-      <Navbar
-        profile={profile}
-        onOpenEditModal={() => setIsEditModalOpen(true)}
-      />
+      {/* Editorial Navigation Top Bar */}
+      <Navbar profile={profile} />
 
       {/* Main Page Flow */}
       <main className="flex-1">
-        {/* Editorial Scholar Hero with Photo Upload & Verified Socials */}
+        {/* Editorial Scholar Hero */}
         <HeroSection
           profile={profile}
           onExplorePublications={handleScrollToPublications}
-          onViewCV={handleScrollToCV}
-          onUpdateAvatar={handleUpdateAvatar}
         />
 
-        {/* Recent News & Doctoral Milestones */}
-        <NewsSection news={profile.news} />
+        {/* Research Experience & Education Degrees */}
+        <AcademicEducationSection profile={profile} />
 
-        {/* Research Interests & Foundational Questions */}
-        <ResearchInterestsSection
-          interests={profile.interests}
-          selectedTopicId={selectedTopicId}
-          onSelectTopic={handleSelectTopicFromInterests}
-        />
+        {/* Research Interests & Core Questions */}
+        <ResearchInterestsSection interests={profile.interests} />
 
-        {/* Integrated Publications List with Filtering, Search & BibTeX */}
+        {/* Publications List with Search, Filter & BibTeX Citation modal */}
         <PublicationsSection
           publications={profile.publications}
-          interests={profile.interests}
           researcherName={profile.name}
-          selectedTopicId={selectedTopicId}
-          onClearTopicFilter={() => setSelectedTopicId(null)}
-          onSelectTopicFilter={(topicId) => setSelectedTopicId(topicId)}
           onOpenBibtexModal={(pub) => setSelectedBibtexPub(pub)}
-          onOpenAddPublication={() => {
-            setEditingPublication(null);
-            setIsAddPubModalOpen(true);
-          }}
-          onEditPublication={(pub) => {
-            setEditingPublication(pub);
-            setIsAddPubModalOpen(true);
-          }}
-          onDeletePublication={handleDeletePublication}
-          onClearAllPublications={handleClearAllPublications}
-          onRestoreSamplePublications={handleRestoreSamplePublications}
         />
 
-        {/* Scientific Engagement, Conference Presentations & Lab Visits with Photo Gallery */}
+        {/* Scientific Engagement, Conference Presentations & Lab Visits */}
         <EngagementsSection
           engagements={profile.engagements}
-          onOpenAddModal={() => {
-            setEditingEngagement(null);
-            setIsAddEngModalOpen(true);
-          }}
-          onOpenEditModal={(item) => {
-            setEditingEngagement(item);
-            setIsAddEngModalOpen(true);
-          }}
-          onDeleteEngagement={handleDeleteEngagement}
-          onUpdateEngagementPhotos={handleUpdateEngagementPhotos}
           onOpenPhotoLightbox={handleOpenPhotoLightbox}
         />
 
-        {/* Full Academic Curriculum Vitae (Printable & Downloadable) */}
-        <CVSection
-          profile={profile}
-          onEditCV={() => setIsEditModalOpen(true)}
-        />
-
-        {/* Contact, Lab Affiliation & Academic Inquiries */}
+        {/* Contact Coordinates & Academic Inquiry Form */}
         <ContactSection profile={profile} />
       </main>
 
-      {/* Editorial Footer */}
+      {/* Clean Academic Footer with Published URL & Sync Trigger */}
       <Footer
         profile={profile}
-        onOpenEditModal={() => setIsEditModalOpen(true)}
+        onOpenSyncModal={() => setIsSyncModalOpen(true)}
       />
 
-      {/* BibTeX & Citation Modal */}
+      {/* Public Visitor: BibTeX & Citation Modal */}
       <BibtexModal
         publication={selectedBibtexPub}
         onClose={() => setSelectedBibtexPub(null)}
       />
 
-      {/* Profile & Academic Links Customizer Modal with Photo Upload */}
-      <EditProfileModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        profile={profile}
-        onSave={handleSaveProfile}
-        onResetToDefault={handleResetToDefault}
-      />
-
-      {/* Add / Import Publication Modal */}
-      <AddPublicationModal
-        isOpen={isAddPubModalOpen}
-        onClose={() => {
-          setIsAddPubModalOpen(false);
-          setEditingPublication(null);
-        }}
-        onSave={handleSavePublication}
-        onDelete={handleDeletePublication}
-        initialPublication={editingPublication}
-        interests={profile.interests}
-        researcherName={profile.name}
-      />
-
-      {/* Add / Edit Engagement Modal with Photo Uploading */}
-      <AddEngagementModal
-        isOpen={isAddEngModalOpen}
-        onClose={() => {
-          setIsAddEngModalOpen(false);
-          setEditingEngagement(null);
-        }}
-        onSave={handleSaveEngagement}
-        onDelete={handleDeleteEngagement}
-        initialItem={editingEngagement}
-      />
-
-      {/* Photo Lightbox Modal */}
+      {/* Public Visitor: Photo Lightbox Modal */}
       <PhotoLightboxModal
         isOpen={lightboxState.isOpen}
         photos={lightboxState.photos}
@@ -373,6 +224,14 @@ export default function App() {
               (prev.currentIndex - 1 + prev.photos.length) % prev.photos.length,
           }))
         }
+      />
+
+      {/* Published Webpage URL & Cross-Origin Data Sync Modal */}
+      <PublishSyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        profile={profile}
+        onImportProfile={handleImportProfile}
       />
 
     </div>

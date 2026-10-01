@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
-import { FileText, SlidersHorizontal, ExternalLink, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { ResearcherProfile } from '../types/researcher';
 
 interface NavbarProps {
   profile: ResearcherProfile;
-  onOpenEditModal: () => void;
-  onOpenCVModal?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ profile, onOpenEditModal }) => {
+export const Navbar: React.FC<NavbarProps> = ({ profile }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
     { label: 'About', href: '#about' },
-    { label: 'Education & Details', href: '#academic-education' },
+    { label: 'Experience & Education', href: '#academic-education' },
     { label: 'Interests', href: '#interests' },
     { label: 'Publications', href: '#publications' },
     { label: 'Engagements', href: '#engagements' },
@@ -40,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({ profile, onOpenEditModal }) => {
           {profile.name}
         </a>
 
-        {/* Zone 2: 4-6 clean text navigation links */}
+        {/* Zone 2: Clean text navigation links */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
           {navLinks.map((link) => (
             <a
@@ -54,25 +52,15 @@ export const Navbar: React.FC<NavbarProps> = ({ profile, onOpenEditModal }) => {
           ))}
         </nav>
 
-        {/* Zone 3: 1-2 primary actions */}
+        {/* Zone 3: Direct contact action */}
         <div className="flex items-center gap-2.5">
           <a
             href="#contact"
             onClick={(e) => handleNavClick(e, '#contact')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-colors whitespace-nowrap shadow-xs"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors whitespace-nowrap shadow-xs"
           >
             <span>Contact</span>
           </a>
-
-          <button
-            type="button"
-            onClick={onOpenEditModal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 active:scale-[0.98] transition-all whitespace-nowrap shadow-xs"
-            title="Edit researcher details, publications, or profile links"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-300" />
-            <span>Customize</span>
-          </button>
 
           {/* Mobile hamburger toggle */}
           <button
@@ -99,20 +87,6 @@ export const Navbar: React.FC<NavbarProps> = ({ profile, onOpenEditModal }) => {
               {link.label}
             </a>
           ))}
-          <div className="pt-2 border-t border-slate-200">
-            <a
-              href={profile.links.cvUrl}
-              onClick={(e) => {
-                if (profile.links.cvUrl.startsWith('#')) {
-                  handleNavClick(e, profile.links.cvUrl);
-                }
-              }}
-              className="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium text-slate-800 bg-white border border-slate-300 rounded-md"
-            >
-              <FileText className="w-4 h-4" />
-              View Academic CV
-            </a>
-          </div>
         </div>
       )}
     </header>

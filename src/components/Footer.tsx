@@ -1,14 +1,14 @@
 import React from 'react';
-import { ArrowUp, FileText } from 'lucide-react';
+import { ArrowUp, Globe } from 'lucide-react';
 import { ResearcherProfile } from '../types/researcher';
 import { GoogleScholarIcon, OrcidIcon, LinkedInIcon } from './AcademicBadges';
 
 interface FooterProps {
   profile: ResearcherProfile;
-  onOpenEditModal: () => void;
+  onOpenSyncModal?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ profile, onOpenEditModal }) => {
+export const Footer: React.FC<FooterProps> = ({ profile, onOpenSyncModal }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -62,14 +62,18 @@ export const Footer: React.FC<FooterProps> = ({ profile, onOpenEditModal }) => {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onOpenEditModal}
-            className="text-slate-600 hover:text-slate-900 transition-colors underline underline-offset-4"
-          >
-            Customize Profile
-          </button>
+        <div className="flex items-center gap-3">
+          {onOpenSyncModal && (
+            <button
+              type="button"
+              onClick={onOpenSyncModal}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+              title="View or copy published webpage URL with your data"
+            >
+              <Globe className="w-3.5 h-3.5 text-slate-500" />
+              <span>Published URL</span>
+            </button>
+          )}
 
           <button
             type="button"
